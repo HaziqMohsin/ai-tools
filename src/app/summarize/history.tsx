@@ -7,11 +7,61 @@ import Link from "next/link";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { format } from "date-fns";
 
+type HistoryProps = {
+    id: string;
+    url: string;
+    summary: string;
+    key_points?: string[]; // Optional for legacy data
+    keywords?: string[];
+    created_at: string;
+    feedback: "up" | "down";
+};
+
 type Props = {
-    summaries: any;
+    summaries: HistoryProps[];
+};
+
+export const markdownComponents = {
+    h1: ({ children }: any) => (
+        <h1 className="text-3xl font-bold my-4">{children}</h1>
+    ),
+    h2: ({ children }: any) => (
+        <h2 className="text-2xl font-semibold my-3">{children}</h2>
+    ),
+    p: ({ children }: any) => (
+        <p className="text-base my-2 text-gray-800">{children}</p>
+    ),
+    a: ({ href, children }: any) => (
+        <a
+            href={href}
+            className="text-blue-600 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+        >
+            {children}
+        </a>
+    ),
+    ul: ({ children }: any) => (
+        <ul className="list-disc pl-5 my-2">{children}</ul>
+    ),
+    ol: ({ children }: any) => (
+        <ol className="list-decimal pl-5 my-2">{children}</ol>
+    ),
+    li: ({ children }: any) => <li className="my-1">{children}</li>,
+    code: ({ children }: any) => (
+        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+            {children}
+        </code>
+    ),
+    blockquote: ({ children }: any) => (
+        <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">
+            {children}
+        </blockquote>
+    ),
 };
 
 const History = ({ summaries }: Props) => {
+    console.log(summaries);
     const hanldeFeedback = async (id: string, feedback: "up" | "down") => {
         await fetch(`/api/summarize/feedback`, {
             method: "POST",
@@ -30,22 +80,67 @@ const History = ({ summaries }: Props) => {
                     Back
                 </Link>
             </div>
-            {summaries.map((summary: any) => (
-                <Card key={summary.id}>
+            {summaries.map((summary) => (
+                <Card key={summary.id} className="gap-4">
                     <CardHeader>
                         <CardTitle className="truncate text-sm text-muted-foreground">
                             {summary.url}
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <Markdown remarkPlugins={[remarkGfm]}>
-                            {summary.summary}
-                        </Markdown>
+
+                    {summary.keywords !== null &&
+                    summary.key_points !== null ? (
+                        <CardContent>
+                            <div className="flex-1 mt-2 p-4 border rounded bg-muted text-muted-foreground">
+                                <p className="mb-4">{summary.summary}</p>
+
+                                <p className="font-bold mb-4">Key Point</p>
+                                {summary.key_points &&
+                                    summary.key_points.length > 0 && (
+                                        <ul className="list-disc list-inside mb-4 text-muted-foreground">
+                                            {summary.key_points.map(
+                                                (point, i) => (
+                                                    <li key={i}>{point}</li>
+                                                )
+                                            )}
+                                        </ul>
+                                    )}
+
+                                <p className="font-bold mb-4">Keywords</p>
+                                {summary.keywords &&
+                                    summary.keywords.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 text-xs text-blue-600 font-medium mb-4">
+                                            {summary.keywords.map((kw, i) => (
+                                                <span
+                                                    key={i}
+                                                    className="bg-blue-100 px-2 py-1 rounded-full border border-blue-300"
+                                                >
+                                                    #{kw}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                            </div>
+                        </CardContent>
+                    ) : (
+                        <CardContent>
+                            <div className="flex-1 mt-6 p-4 border rounded bg-muted text-muted-foreground prose prose-ul:list-disc">
+                                <Markdown
+                                    components={markdownComponents}
+                                    remarkPlugins={[remarkGfm]}
+                                >
+                                    {summary.summary}
+                                </Markdown>
+                            </div>
+                        </CardContent>
+                    )}
+
+                    <div className="px-6">
                         <p className="text-xs text-right text-muted-foreground mt-4">
                             {format(summary.created_at, "h.mmaaa dd/MM/yyyy")}
                         </p>
-                    </CardContent>
-                    <div className="p-6 flex gap-2 items-center">
+                    </div>
+                    <div className="px-6 flex gap-2 items-center">
                         <button
                             className="cursor-pointer"
                             onClick={() => hanldeFeedback(summary.id, "up")}

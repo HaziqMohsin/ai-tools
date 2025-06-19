@@ -8,6 +8,12 @@ const SummarizeSchema = z.object({
     url: z.string().url("Must be a valid URL"),
 });
 
+const SummarizeJsonSchema = z.object({
+    summary: z.string(),
+    key_points: z.array(z.string()),
+    keywords: z.array(z.string()),
+});
+
 export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const body = await req.json();
@@ -50,14 +56,30 @@ export async function POST(req: NextRequest) {
             contents: [
                 {
                     role: "user",
-                    parts: [{ text: `Summarize this web page:\n\n${text}` }],
+                    parts: [
+                        {
+                            text: `Summarize the web page and return ONLY a JSON object with this structure:
+
+                                    {
+                                    "summary": "A one-paragraph summary of the page.",
+                                    "key_points": ["Bullet point 1", "Bullet point 2", "Bullet point 3"],
+                                    "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+                                    }
+
+                                    Only return valid JSON. No explanation. No markdown.
+
+                                    Here is the content:
+
+                                    ${text}`,
+                        },
+                    ],
                 },
             ],
             config: {
                 // Use generationConfig
                 // systemInstruction:
                 //     "You are a comedian like Adam Sandler. Your name is Hamo.",
-                maxOutputTokens: 150,
+                maxOutputTokens: 300,
                 temperature: 0.1, // Increased temperature for comedian-like responses
             },
         });
@@ -74,9 +96,30 @@ export async function POST(req: NextRequest) {
                     }
                 }
 
+                // Parse JSON (safe fallback)
+                let parsedOutput: z.infer<typeof SummarizeJsonSchema> | null =
+                    null;
+
+                try {
+                    const jsonStart = fullText.indexOf("{");
+                    const jsonEnd = fullText.lastIndexOf("}") + 1;
+                    const jsonString = fullText.slice(jsonStart, jsonEnd);
+                    parsedOutput = SummarizeJsonSchema.parse(
+                        JSON.parse(jsonString)
+                    );
+                } catch (err) {
+                    console.error("Failed to parse Gemini output:", err);
+                    return NextResponse.json(
+                        { error: "Invalid LLM output" },
+                        { status: 500 }
+                    );
+                }
+
                 await supabase.from("summaries").insert({
                     url,
-                    summary: fullText,
+                    summary: parsedOutput.summary,
+                    key_points: parsedOutput.key_points,
+                    keywords: parsedOutput.keywords,
                 });
 
                 controller.close();
