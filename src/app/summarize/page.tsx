@@ -49,11 +49,19 @@ export default async function Page({
     const filters = await searchParams;
     const data = await fetch(`${process.env.API_URL}/api/summarize/history`);
     const { summaries } = await data.json();
+    const allKeywords = Array.from(
+        new Set(summaries.flatMap((s: any) => s.keywords || []))
+    );
+
+    console.log(allKeywords);
 
     if (filters.history) {
         return (
             <div>
-                <History summaries={summaries} />
+                <History
+                    summaries={summaries}
+                    keywords={allKeywords as string[]}
+                />
             </div>
         );
     }

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,10 +20,16 @@ type HistoryProps = {
 
 type Props = {
     summaries: HistoryProps[];
+    keywords: string[];
 };
 
-const History = ({ summaries }: Props) => {
-    console.log(summaries);
+const History = ({ summaries, keywords }: Props) => {
+    const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
+
+    const filteredSummaries = selectedKeyword
+        ? summaries.filter((s) => s.keywords?.includes(selectedKeyword))
+        : summaries;
+
     const hanldeFeedback = async (id: string, feedback: "up" | "down") => {
         await fetch(`/api/summarize/feedback`, {
             method: "POST",
@@ -42,7 +48,26 @@ const History = ({ summaries }: Props) => {
                     Back
                 </Link>
             </div>
-            {summaries.map((summary) => (
+            <div className="flex flex-wrap gap-2 mb-6">
+                {keywords.map((kw) => (
+                    <button
+                        key={kw}
+                        onClick={() =>
+                            setSelectedKeyword((prev) =>
+                                prev === kw ? null : kw
+                            )
+                        }
+                        className={`px-3 py-1 rounded-full border text-sm transition cursor-pointer ${
+                            selectedKeyword === kw
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
+                        }`}
+                    >
+                        #{kw}
+                    </button>
+                ))}
+            </div>
+            {filteredSummaries.map((summary) => (
                 <Card key={summary.id} className="gap-4">
                     <CardHeader>
                         <CardTitle className="truncate text-sm text-muted-foreground">
