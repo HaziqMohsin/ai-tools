@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
 
 export default function Index() {
     const [url, setUrl] = useState("");
@@ -54,6 +55,11 @@ export default function Index() {
 
     return (
         <div className="max-w-xl mx-auto py-10">
+            <div className="mb-4">
+                <Link className="text-blue-500" href="/summarize?history=true">
+                    History
+                </Link>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Web Page Summarizer</CardTitle>
