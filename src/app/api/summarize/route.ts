@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         });
 
         let fullText = "";
+        const encoder = new TextEncoder();
 
         const customStream = new ReadableStream({
             async start(controller) {
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
                     const chunkText = chunk.text;
                     if (chunkText) {
                         fullText += chunkText;
-                        controller.enqueue(chunkText);
+                        controller.enqueue(encoder.encode(chunkText));
                     }
                 }
 
@@ -107,6 +108,13 @@ export async function POST(req: NextRequest) {
                     parsedOutput = SummarizeJsonSchema.parse(
                         JSON.parse(jsonString)
                     );
+
+                    await supabase.from("summaries").insert({
+                        url,
+                        summary: parsedOutput.summary,
+                        key_points: parsedOutput.key_points,
+                        keywords: parsedOutput.keywords,
+                    });
                 } catch (err) {
                     console.error("Failed to parse Gemini output:", err);
                     return NextResponse.json(
@@ -115,34 +123,17 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                await supabase.from("summaries").insert({
-                    url,
-                    summary: parsedOutput.summary,
-                    key_points: parsedOutput.key_points,
-                    keywords: parsedOutput.keywords,
-                });
-
                 controller.close();
             },
         });
 
         return new Response(customStream, {
             headers: {
-                "Content-Type": "text/plain", // Or 'text/event-stream' if you want SSE, but text/plain is simpler for basic streaming
+                "Content-Type": "text/plain",
                 "Cache-Control": "no-cache",
                 Connection: "keep-alive",
             },
         });
-
-        // 2. Load Gemini model and generate summary
-        // const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        // const result = await model.generateContent(
-        //     `Summarize this web page:\n\n${text}`
-        // );
-        // const response = result.response;
-        // const summary = response.text();
-
-        // return NextResponse.json({ summary });
     } catch (err) {
         console.error("Gemini Error:", err);
         return NextResponse.json(
