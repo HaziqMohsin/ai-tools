@@ -24,11 +24,22 @@ type Props = {
 };
 
 const History = ({ summaries, keywords }: Props) => {
-    const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
+    const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
 
-    const filteredSummaries = selectedKeyword
-        ? summaries.filter((s) => s.keywords?.includes(selectedKeyword))
-        : summaries;
+    const toggleKeyword = (keyword: string) => {
+        setSelectedKeywords((prev) =>
+            prev.includes(keyword)
+                ? prev.filter((k) => k !== keyword)
+                : [...prev, keyword]
+        );
+    };
+
+    const filteredSummaries =
+        selectedKeywords.length > 0
+            ? summaries.filter((summary) =>
+                  summary.keywords?.some((kw) => selectedKeywords.includes(kw))
+              )
+            : summaries;
 
     const hanldeFeedback = async (id: string, feedback: "up" | "down") => {
         await fetch(`/api/summarize/feedback`, {
@@ -43,29 +54,36 @@ const History = ({ summaries, keywords }: Props) => {
     };
     return (
         <div className="max-w-3xl mx-auto py-10 px-4 space-y-6">
-            <div className="mb-4">
+            <div className="flex justify-between items-center gap-4 mb-4">
                 <Link href={"/summarize"} className="text-blue-500">
                     Back
                 </Link>
+                {selectedKeywords.length > 0 && (
+                    <button
+                        onClick={() => setSelectedKeywords([])}
+                        className="text-sm underline text-muted-foreground cursor-pointer"
+                    >
+                        Clear all filters
+                    </button>
+                )}
             </div>
             <div className="flex flex-wrap gap-2 mb-6">
-                {keywords.map((kw) => (
-                    <button
-                        key={kw}
-                        onClick={() =>
-                            setSelectedKeyword((prev) =>
-                                prev === kw ? null : kw
-                            )
-                        }
-                        className={`px-3 py-1 rounded-full border text-sm transition cursor-pointer ${
-                            selectedKeyword === kw
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
-                        }`}
-                    >
-                        #{kw}
-                    </button>
-                ))}
+                {keywords.map((kw) => {
+                    const isSelected = selectedKeywords.includes(kw);
+                    return (
+                        <button
+                            key={kw}
+                            onClick={() => toggleKeyword(kw)}
+                            className={`px-3 py-1 rounded-full border text-sm transition ${
+                                isSelected
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
+                            }`}
+                        >
+                            #{kw}
+                        </button>
+                    );
+                })}
             </div>
             {filteredSummaries.map((summary) => (
                 <Card key={summary.id} className="gap-4">
