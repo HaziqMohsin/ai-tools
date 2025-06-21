@@ -14,6 +14,7 @@ export default function Index() {
     const [summary, setSummary] = useState("");
     const [loading, setLoading] = useState(false);
     const [parsedOutput, setParsedOutput] = useState<{
+        title: string;
         summary: string;
         key_points: string[];
         keywords: string[];
@@ -24,6 +25,7 @@ export default function Index() {
         e.preventDefault();
         setLoading(true);
         setSummary("");
+        setUrl("");
         console.log("here");
         try {
             const res = await fetch("/api/summarize", {
@@ -66,7 +68,12 @@ export default function Index() {
                     const jsonString = rawText.slice(jsonStart, jsonEnd);
                     const json = JSON.parse(jsonString);
 
-                    if (json.summary && json.key_points && json.keywords) {
+                    if (
+                        json.summary &&
+                        json.key_points &&
+                        json.keywords &&
+                        json.title
+                    ) {
                         setParsedOutput(json);
                     }
                 } catch (err) {
@@ -74,6 +81,7 @@ export default function Index() {
                 }
             }
 
+            console.log(rawText);
             setLoading(false);
         } catch (error) {
             console.log(error);
@@ -83,11 +91,11 @@ export default function Index() {
 
     return (
         <div className="max-w-xl mx-auto py-10">
-            <div className="mb-4">
+            {/* <div className="mb-4">
                 <Link className="text-blue-500" href="/summarize?history=true">
                     History
                 </Link>
-            </div>
+            </div> */}
             <Card>
                 <CardHeader>
                     <CardTitle>Web Page Summarizer</CardTitle>
@@ -110,17 +118,20 @@ export default function Index() {
                     </form>
 
                     {parsedOutput ? (
-                        <div className="bg-muted p-4 rounded space-y-4">
+                        <div className="bg-muted p-4 rounded space-y-4 my-4">
+                            <h3 className="font-bold text-xl">
+                                {parsedOutput.title}
+                            </h3>
+                            <h4 className="font-bold text-lg">Summary</h4>
                             <p className="mb-4">{parsedOutput.summary}</p>
-
-                            <p className="font-bold mb-4">Key Point</p>
+                            <h4 className="font-bold text-lg">Key Point</h4>
                             <ul className="list-disc list-inside text-muted-foreground">
                                 {parsedOutput.key_points.map((point, i) => (
                                     <li key={i}>{point}</li>
                                 ))}
                             </ul>
 
-                            <p className="font-bold mb-4">Keywords</p>
+                            <h4 className="font-bold text-lg">Keywords</h4>
                             <div className="flex flex-wrap gap-2 text-xs text-blue-600 font-medium">
                                 {parsedOutput.keywords.map((kw, i) => (
                                     <span

@@ -40,6 +40,7 @@ export async function GET() {
 
                                             Use this format exactly:
                                             {
+                                                "title": ${article.title}
                                                 "summary": "short summary",
                                                 "key_points": ["1st takeaway or fact",
                                                                 "2nd insight",

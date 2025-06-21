@@ -65,8 +65,9 @@ export default async function Page({
     }
 
     return (
-        <div>
+        <>
             <Index />
-        </div>
+            <History summaries={summaries} keywords={allKeywords as string[]} />
+        </>
     );
 }

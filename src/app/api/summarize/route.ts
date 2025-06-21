@@ -12,6 +12,7 @@ const SummarizeJsonSchema = z.object({
     summary: z.string(),
     key_points: z.array(z.string()),
     keywords: z.array(z.string()),
+    title: z.string(),
 });
 
 export async function POST(req: NextRequest) {
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
                             text: `Summarize the web page and return ONLY a JSON object with this structure:
 
                                     {
+                                    "title": "a meaningfull title.",
                                     "summary": "A one-paragraph summary of the page.",
                                     "key_points": ["Bullet point 1", "Bullet point 2", "Bullet point 3"],
                                     "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
@@ -111,6 +113,7 @@ export async function POST(req: NextRequest) {
 
                     await supabase.from("summaries").insert({
                         url,
+                        title: parsedOutput.title,
                         summary: parsedOutput.summary,
                         key_points: parsedOutput.key_points,
                         keywords: parsedOutput.keywords,
