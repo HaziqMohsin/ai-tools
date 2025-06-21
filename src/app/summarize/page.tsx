@@ -53,8 +53,6 @@ export default async function Page({
         new Set(summaries.flatMap((s: any) => s.keywords || []))
     );
 
-    console.log(allKeywords);
-
     if (filters.history) {
         return (
             <div>
