@@ -4,10 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+    ThumbsUp,
+    ThumbsDown,
+    CircleArrowDown,
+    CircleArrowUp,
+} from "lucide-react";
 import { format } from "date-fns";
 import { markdownComponents } from "./page";
-
+import { Button } from "@/components/ui/button";
 type HistoryProps = {
     id: string;
     url: string;
@@ -17,6 +22,8 @@ type HistoryProps = {
     title?: string;
     created_at: string;
     feedback: "up" | "down";
+    upvotes: number;
+    downvotes: number;
 };
 
 type Props = {
@@ -26,6 +33,13 @@ type Props = {
 
 const History = ({ summaries, keywords }: Props) => {
     const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+    const [currentFeedback, setCurrentFeedback] = useState<{
+        upvotes?: number | null;
+        downvotes?: number | null;
+    }>({
+        upvotes: null,
+        downvotes: null,
+    });
 
     const toggleKeyword = (keyword: string) => {
         setSelectedKeywords((prev) =>
@@ -42,7 +56,12 @@ const History = ({ summaries, keywords }: Props) => {
               )
             : summaries;
 
-    const hanldeFeedback = async (id: string, feedback: "up" | "down") => {
+    const hanldeFeedback = async (
+        id: string,
+        feedback: "up" | "down",
+        count: number
+    ) => {
+        setCurrentFeedback({ upvotes: count + 1 });
         await fetch(`/api/summarize/feedback`, {
             method: "POST",
             headers: {
@@ -96,10 +115,10 @@ const History = ({ summaries, keywords }: Props) => {
                                         {summary.title}
                                     </h3>
                                 </div>
-                                <CardTitle className="truncate text-sm text-muted-foreground">
+                                <CardTitle className="truncate text-sm text-muted-foreground cursor-pointer">
                                     <div className="truncate">
                                         <Link
-                                            className="underline text-blue-500 cursor-pointer"
+                                            className="underline text-blue-500"
                                             href={summary.url}
                                             target="_blank"
                                         >
@@ -166,41 +185,49 @@ const History = ({ summaries, keywords }: Props) => {
                                 </CardContent>
                             )}
                             {/* <div className="px-6">
-                        <p className="text-xs text-right text-muted-foreground mt-4">
-                            {format(summary.created_at, "h.mmaaa dd/MM/yyyy")}
-                        </p>
-                    </div> */}
-                            <div className="px-6 flex gap-2 items-center justify-end">
-                                <button
-                                    className="cursor-pointer"
-                                    onClick={() =>
-                                        hanldeFeedback(summary.id, "up")
-                                    }
-                                >
-                                    <ThumbsUp
-                                        size={"16"}
-                                        color={
-                                            summary.feedback === "up"
-                                                ? "#2f840b"
-                                                : "#000"
+                                <p className="text-xs text-right text-muted-foreground mt-4">
+                                    {format(summary.created_at, "h.mmaaa dd/MM/yyyy")}
+                                </p>
+                            </div> */}
+                            <div className="px-6 flex gap-2 items-center justify-end ">
+                                <div className="bg-gray-500/10 flex rounded-lg">
+                                    <button
+                                        className="group cursor-pointer hover:bg-[#2f840b]/20 rounded-lg flex gap-2 px-2 py-1 transition-all duration-150"
+                                        onClick={() =>
+                                            hanldeFeedback(
+                                                summary.id,
+                                                "up",
+                                                summary.upvotes
+                                            )
                                         }
-                                    />
-                                </button>
-                                <button
-                                    className="cursor-pointer"
-                                    onClick={() =>
-                                        hanldeFeedback(summary.id, "down")
-                                    }
-                                >
-                                    <ThumbsDown
-                                        size={"16"}
-                                        color={
-                                            summary.feedback === "down"
-                                                ? "#710909"
-                                                : "#000"
+                                    >
+                                        <CircleArrowUp
+                                            size={"24"}
+                                            className="group-hover:text-[#2f840b] transition-all duration-150"
+                                        />
+                                        <span className="group-hover:text-[#2f840b] transition-all duration-150">
+                                            {summary.upvotes}
+                                        </span>
+                                    </button>
+                                    <button
+                                        className="group cursor-pointer hover:bg-[#eb1717]/20 rounded-lg flex gap-2 px-2 py-1 transition-all duration-150"
+                                        onClick={() =>
+                                            hanldeFeedback(
+                                                summary.id,
+                                                "down",
+                                                summary.downvotes
+                                            )
                                         }
-                                    />
-                                </button>
+                                    >
+                                        <CircleArrowDown
+                                            size={"24"}
+                                            className="group-hover:text-[#eb1717] transition-all duration-150"
+                                        />
+                                        {/* <span className="group-hover:text-[#710909] transition-all duration-150">
+                                            {summary.downvotes}
+                                        </span> */}
+                                    </button>
+                                </div>
                             </div>
                         </Card>
                     ))}

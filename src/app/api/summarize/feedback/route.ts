@@ -21,9 +21,27 @@ export async function POST(req: NextRequest) {
 
     const { id, feedback } = parsed.data;
 
+    const { data: dataVote, error: fetchError } = await supabase
+        .from("summaries")
+        .select("upvotes, downvotes")
+        .eq("id", id)
+        .single();
+
+    if (fetchError || !dataVote)
+        return NextResponse.json(
+            { error: fetchError?.message },
+            { status: 500 }
+        );
+
+    const updateField = {
+        upvotes: feedback === "up" ? dataVote.upvotes + 1 : dataVote.upvotes,
+        downvotes:
+            feedback === "down" ? dataVote.downvotes + 1 : dataVote.downvotes,
+    };
+
     const { error } = await supabase
         .from("summaries")
-        .update({ feedback })
+        .update(updateField)
         .eq("id", id);
 
     if (error) {
